@@ -146,15 +146,10 @@ export async function connectMongo(): Promise<Db> {
   await invoices.createIndex({ status: 1 })
   await invoices.createIndex({ merchant_address: 1 })
   await invoices.createIndex({ status: 1, merchant_address: 1 })
+  await invoices.createIndex({ created_at: -1 })
 
   const cursors = db.collection<IndexerCursor>("indexer_cursors")
   await cursors.createIndex({ _id: 1 }, { unique: true })
-
-  const invoices = db.collection<InvoiceRecord>("invoices")
-  await invoices.createIndex({ invoice_id: 1 }, { unique: true })
-  await invoices.createIndex({ status: 1 })
-  await invoices.createIndex({ merchant_address: 1 })
-  await invoices.createIndex({ created_at: -1 })
 
   return db
 }
@@ -169,10 +164,6 @@ export function getSettlementsCollection(database: Db): Collection<SettlementRec
 
 export function getCursorsCollection(database: Db): Collection<IndexerCursor> {
   return database.collection<IndexerCursor>("indexer_cursors")
-}
-
-export function getInvoicesCollection(database: Db): Collection<InvoiceRecord> {
-  return database.collection<InvoiceRecord>("invoices")
 }
 
 export async function closeMongo(): Promise<void> {
