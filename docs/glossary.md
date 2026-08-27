@@ -102,10 +102,10 @@ An optional list of token contract addresses accepted for settlement. If non-emp
 ## Dispute Terms
 
 **Dispute**
-An on-chain record raised by a claimant against a counterparty over a specific settlement. Raising a dispute automatically places the referenced settlement `OnHold`.
+An on-chain record raised by a claimant against a counterparty over a specific settlement. Raising a dispute automatically places the referenced settlement `OnHold`. Dispute records — including every resolution vote — are stored in the treasury contract's on-chain storage, so in-flight votes survive process restarts and are shared across backend replicas.
 
 **resolution_weight**
-Cumulative weight of signers who have voted on the dispute resolution. When it reaches the treasury threshold the dispute transitions to `ResolvedClaimant` or `ResolvedCounterparty`.
+Cumulative weight of signers who have voted on the dispute resolution. When it reaches the treasury threshold the dispute transitions to `ResolvedClaimant` or `ResolvedCounterparty`. A dispute resolved in favour of the counterparty (merchant) returns the settlement to `Pending` so it can resume the approval flow; a dispute resolved in favour of the claimant voids the settlement (`Cancelled`).
 
 ### DisputeStatus
 
