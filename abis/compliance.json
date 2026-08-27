@@ -4,6 +4,7 @@
   "functions": [
     "initialize",
     "is_allowed",
+    "get_address_status",
     "allow_address",
     "block_address",
     "allow_address_until",
