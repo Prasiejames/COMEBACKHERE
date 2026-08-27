@@ -1,13 +1,13 @@
 import { Router, type Request, type Response } from "express"
 import {
   Keypair,
-  Networks,
   TransactionBuilder,
   BASE_FEE,
   Contract,
   nativeToScVal,
   SorobanRpc,
 } from "stellar-sdk"
+import { requireEnv } from "../lib/env.js"
 import { validateBody } from "../middleware/validate.js"
 import { allowBodySchema, blockBodySchema } from "../schemas/index.js"
 
@@ -32,15 +32,6 @@ function buildSorobanClient(rpcUrl: string): SorobanClient {
     sendTransaction: (tx) => server.sendTransaction(tx),
     getTransaction: (hash) => server.getTransaction(hash),
   }
-}
-
-function envOrError(): { rpcUrl: string; contractId: string; signerSecret: string; networkPassphrase: string } | null {
-  const rpcUrl = process.env.SOROBAN_RPC_URL
-  const contractId = process.env.COMPLIANCE_CONTRACT_ID
-  const signerSecret = process.env.SIGNER_SECRET_KEY
-  const networkPassphrase = process.env.NETWORK_PASSPHRASE ?? Networks.STANDALONE
-  if (!rpcUrl || !contractId || !signerSecret) return null
-  return { rpcUrl, contractId, signerSecret, networkPassphrase }
 }
 
 // ---------------------------------------------------------------------------
@@ -138,11 +129,11 @@ router.post("/allow", validateBody(allowBodySchema), async (req: Request, res: R
 
   const { address, until } = req.body as { address: string; until?: number }
 
-  const env = envOrError()
-  if (!env) {
-    res.status(503).json({ error: "Service misconfiguration: missing required environment variables" })
-    return
-  }
+  const env = requireEnv(res, {
+    complianceContractId: "COMPLIANCE_CONTRACT_ID",
+    signerSecret: "SIGNER_SECRET_KEY",
+  })
+  if (!env) return
 
   try {
     const client = buildSorobanClient(env.rpcUrl)
@@ -155,7 +146,7 @@ router.post("/allow", validateBody(allowBodySchema), async (req: Request, res: R
       operation as "allow_address" | "allow_address_until",
       args,
       client,
-      env.contractId,
+      env.complianceContractId,
       env.signerSecret,
       env.networkPassphrase
     )
@@ -190,11 +181,11 @@ router.post("/block", validateBody(blockBodySchema), async (req: Request, res: R
 
   const { address } = req.body as { address: string }
 
-  const env = envOrError()
-  if (!env) {
-    res.status(503).json({ error: "Service misconfiguration: missing required environment variables" })
-    return
-  }
+  const env = requireEnv(res, {
+    complianceContractId: "COMPLIANCE_CONTRACT_ID",
+    signerSecret: "SIGNER_SECRET_KEY",
+  })
+  if (!env) return
 
   // Audit log — admin identity + timestamp
   console.log(`[compliance] block_address admin="${adminKey}" address="${address}" ts="${new Date().toISOString()}"`)
@@ -205,7 +196,7 @@ router.post("/block", validateBody(blockBodySchema), async (req: Request, res: R
       "block_address",
       [nativeToScVal(address, { type: "address" })],
       client,
-      env.contractId,
+      env.complianceContractId,
       env.signerSecret,
       env.networkPassphrase
     )
